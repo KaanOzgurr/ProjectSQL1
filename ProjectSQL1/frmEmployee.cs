@@ -71,9 +71,9 @@ namespace ProjectSQL1 // << Projenizin namespace'i (ProjectSQL1)
                         // Veritabanı hatası durumunda
                         MessageBox.Show("Çalışanlar yüklenirken bir hata oluştu: " + ex.Message, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
-                } // SqlCommand using bloğu sonu
-            } // SqlConnection using bloğu sonu
-        } // LoadEmployeeData metodu sonu
+                } 
+            } 
+        } 
 
 
         // Çalışan Ekle butonunun Click olayı
@@ -88,7 +88,7 @@ namespace ProjectSQL1 // << Projenizin namespace'i (ProjectSQL1)
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(position) || string.IsNullOrEmpty(salaryText))
             {
                 MessageBox.Show("Lütfen tüm çalışan bilgilerini doldurun.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return; // Alanlar boşsa işlemi durdur
+                return; 
             }
 
             // Maaş alanının sayısal olup olmadığını kontrol et
@@ -120,54 +120,52 @@ namespace ProjectSQL1 // << Projenizin namespace'i (ProjectSQL1)
                     try
                     {
                         connection.Open(); // Bağlantıyı aç
-                        int rowsAffected = command.ExecuteNonQuery(); // Komutu çalıştır (INSERT için ExecuteNonQuery kullanılır)
+                        int rowsAffected = command.ExecuteNonQuery(); 
 
                         if (rowsAffected > 0)
                         {
                             MessageBox.Show("Çalışan başarıyla eklendi.", "Başarı", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                            // === Başarılı Ekleme Sonrası Yapılacaklar ===
+                            
 
-                            // TextBox'ları temizle
+                            
                             txtName.Clear();
                             txtPosition.Clear();
                             txtSalary.Clear();
 
-                            // DataGridView'i yeniden yükleyerek güncel listeyi göster
-                            LoadEmployeeData(); // Çalışan listesini yenile
+                            
+                            LoadEmployeeData(); 
                         }
                         else
                         {
-                            // rowsAffected 0 veya daha az ise (bu INSERT için beklenmez)
+                           
                             MessageBox.Show("Çalışan eklenirken beklenmeyen bir durum oluştu.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         }
                     }
                     catch (Exception ex)
                     {
-                        // Veritabanı veya diğer hataları yakala
+                        
                         MessageBox.Show("Bir hata oluştu: " + ex.Message, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
-                } // SqlCommand using bloğu sonu
-            } // SqlConnection using bloğu sonu
-        } // btnAdd_Click metodu sonu
+                } 
+            } 
+        } 
 
 
       
         private void btnEdit_Click(object sender, EventArgs e)
         {
-            // Düzenleme mantığı buraya gelecek
+            
             MessageBox.Show("Düzenle butonu tıklandı. Düzenleme mantığı henüz eklenmedi.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             
         }
 
 
-        // === Sil (Delete) Butonu Click Olayı ===
-        // Bu metot, DataGridView'de seçili çalışanı veritabanından silmek için gerekli mantığı içerecektir.
-        // Şu an için sadece placeholder.
+        
         private void btnDelete_Click(object sender, EventArgs e)
         {
-            // Silme mantığı buraya gelecek
+            
             MessageBox.Show("Sil butonu tıklandı. Silme mantığı henüz eklenmedi.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
            
@@ -192,7 +190,7 @@ namespace ProjectSQL1 // << Projenizin namespace'i (ProjectSQL1)
         // }
 
 
-        // Formunuzdaki diğer metotlar buraya gelebilir.
-    } // Form sınıfı sonu
-} // Namespace sonu
+        
+    } 
+} 
 
