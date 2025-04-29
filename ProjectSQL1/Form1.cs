@@ -82,9 +82,7 @@ namespace ProjectSQL1
 
                                
                                 this.Hide();
-                                // Ana formu oluştur ve göster
-                                // frmMain mainForm = new frmMain(username, role); // Ana forma kullanıcı adı ve rolü gönderebilirsiniz
-                                // mainForm.Show();
+                                
 
                                 
                             }
