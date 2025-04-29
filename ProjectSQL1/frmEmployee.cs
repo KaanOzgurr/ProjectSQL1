@@ -9,31 +9,30 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Data.SqlClient; // SQL Server bağlantısı ve komutları için GEREKLİ
-using System.Configuration; // App.config'ten bağlantı dizesini okumak için GEREKLİ
+using System.Data.SqlClient; 
+using System.Configuration; 
 
-// Eğer App.config bağlantısını farklı bir sınıfta yönetiyorsanız, o sınıfın namespace'ini buraya ekleyin.
-// Örneğin: using ProjectSQL1.DatabaseHelper;
+
+
 
 namespace ProjectSQL1 // << Projenizin namespace'i (ProjectSQL1)
 {
-    public partial class frmEmployee : Form // << Form sınıfı tanımı
+    public partial class frmEmployee : Form 
     {
-        // Constructor: Form ilk oluşturulduğunda çalışır
+        
         public frmEmployee()
         {
-            InitializeComponent(); // Formun görsel kontrollerini ayarlar, OLMALI.
+            InitializeComponent(); 
         }
 
-        // frmEmployee formu yüklendiğinde çalışan olay metodu
-        // Form açıldığında çalışan listesini otomatik olarak yüklemek için burayı kullanırız.
+        
         private void frmEmployee_Load(object sender, EventArgs e)
         {
-            // Form yüklendiğinde çalışanları DataGridView'e yükle
-            LoadEmployeeData(); // Bu metot aşağıda tanımlanmıştır.
+            
+            LoadEmployeeData(); 
         }
 
-        // Veritabanındaki çalışanları DataGridView'e yükleyen metot
+        
         private void LoadEmployeeData()
         {
             string connectionString = ConfigurationManager.ConnectionStrings["EmployeeDBConnection"].ConnectionString;
