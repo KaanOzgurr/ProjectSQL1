@@ -16,7 +16,7 @@ namespace ProjectSQL1
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new frmEmployee());
+            Application.Run(new frmLogin());
         }
     }
-}
+} 

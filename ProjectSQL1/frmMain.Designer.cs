@@ -40,9 +40,9 @@
             this.lblWelcome.ForeColor = System.Drawing.Color.DarkGreen;
             this.lblWelcome.Location = new System.Drawing.Point(50, 20);
             this.lblWelcome.Name = "lblWelcome";
-            this.lblWelcome.Size = new System.Drawing.Size(104, 28);
+            this.lblWelcome.Size = new System.Drawing.Size(166, 28);
             this.lblWelcome.TabIndex = 0;
-            this.lblWelcome.Text = "Welcome,";
+            this.lblWelcome.Text = "Welcome, [User]";
             // 
             // btnManageEmployees
             // 
@@ -54,6 +54,7 @@
             this.btnManageEmployees.TabIndex = 1;
             this.btnManageEmployees.Text = "Manage Employees";
             this.btnManageEmployees.UseVisualStyleBackColor = true;
+            this.btnManageEmployees.Click += new System.EventHandler(this.btnManageEmployees_Click);
             // 
             // btnLogout
             // 
@@ -65,6 +66,7 @@
             this.btnLogout.TabIndex = 2;
             this.btnLogout.Text = "Logout";
             this.btnLogout.UseVisualStyleBackColor = true;
+            this.btnLogout.Click += new System.EventHandler(this.btnLogout_Click);
             // 
             // frmMain
             // 
@@ -76,7 +78,7 @@
             this.Controls.Add(this.btnManageEmployees);
             this.Controls.Add(this.lblWelcome);
             this.Name = "frmMain";
-            this.Text = "Employee Management System";
+            this.Text = "frmMain";
             this.Load += new System.EventHandler(this.frmMain_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

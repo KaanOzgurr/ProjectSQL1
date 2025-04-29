@@ -1,4 +1,5 @@
-﻿using Npgsql;
+﻿// frmEmployee.cs dosyanızın tam içeriği (ProjectSQL1 projesi için)
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -8,259 +9,190 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Xml.Linq;
+using System.Data.SqlClient; // SQL Server bağlantısı ve komutları için GEREKLİ
+using System.Configuration; // App.config'ten bağlantı dizesini okumak için GEREKLİ
 
-namespace ProjectSQL1
+// Eğer App.config bağlantısını farklı bir sınıfta yönetiyorsanız, o sınıfın namespace'ini buraya ekleyin.
+// Örneğin: using ProjectSQL1.DatabaseHelper;
+
+namespace ProjectSQL1 // << Projenizin namespace'i (ProjectSQL1)
 {
-    public partial class frmEmployee : Form
+    public partial class frmEmployee : Form // << Form sınıfı tanımı
     {
-        private string connectionString = "Host=localhost;Port=5432;Database=EmployeeManagement;Username=postgres;Password=sifre;"; 
-        private int? selectedEmployeeIdForEdit = null; 
-        private bool isEditMode = false; 
-
+        // Constructor: Form ilk oluşturulduğunda çalışır
         public frmEmployee()
         {
-            InitializeComponent();
+            InitializeComponent(); // Formun görsel kontrollerini ayarlar, OLMALI.
         }
 
+        // frmEmployee formu yüklendiğinde çalışan olay metodu
+        // Form açıldığında çalışan listesini otomatik olarak yüklemek için burayı kullanırız.
         private void frmEmployee_Load(object sender, EventArgs e)
         {
-            LoadEmployeeData();
+            // Form yüklendiğinde çalışanları DataGridView'e yükle
+            LoadEmployeeData(); // Bu metot aşağıda tanımlanmıştır.
         }
 
+        // Veritabanındaki çalışanları DataGridView'e yükleyen metot
         private void LoadEmployeeData()
         {
-            using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
+            string connectionString = ConfigurationManager.ConnectionStrings["EmployeeDBConnection"].ConnectionString;
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                try
+                // SELECT komutu ile tüm çalışanları getir
+                // EmployeeID, Name, Position, Salary sütunlarını seçiyoruz
+                string selectQuery = "SELECT EmployeeID, Name, Position, Salary FROM Employees";
+
+                using (SqlCommand command = new SqlCommand(selectQuery, connection))
                 {
-                    connection.Open();
-                    string sql = "SELECT employeeid, name, position, salary FROM employees;";
-                    using (NpgsqlCommand command = new NpgsqlCommand(sql, connection))
+                    try
                     {
-                        using (NpgsqlDataReader reader = command.ExecuteReader())
-                        {
-                            dgvEmployees.Rows.Clear();
-                            while (reader.Read())
-                            {
-                                dgvEmployees.Rows.Add(reader.GetInt32(0), reader.GetString(1), reader.GetString(2), reader.GetFloat(3));
-                            }
-                        }
+                        connection.Open(); // Bağlantıyı aç
+                        DataTable dataTable = new DataTable(); // Verileri tutmak için DataTable oluştur
+                        SqlDataAdapter dataAdapter = new SqlDataAdapter(command); // Veri adaptörünü oluştur
+                        dataAdapter.Fill(dataTable); // Verileri DataTable'a doldur
+
+                        // DataGridView'in kaynağını doldurulmuş DataTable olarak ayarla
+                        // Bu, DataGridView'in verileri göstermesini sağlar.
+                        dgvEmployees.DataSource = dataTable;
+
+                        // DataGridView sütun başlıklarını düzenleme (isteğe bağlı ama iyi uygulama)
+                        // Eğer veritabanı sütun adları farklıysa veya başlıkları değiştirmek isterseniz.
+                        // dgvEmployees.Columns["EmployeeID"].HeaderText = "ID";
+                        // dgvEmployees.Columns["Name"].HeaderText = "Ad Soyad";
+                        // dgvEmployees.Columns["Position"].HeaderText = "Pozisyon";
+                        // dgvEmployees.Columns["Salary"].HeaderText = "Maaş";
+                        // dgvEmployees.Columns["EmployeeID"].Visible = false; // Eğer ID sütununu gizlemek isterseniz
+
                     }
-                    connection.Close();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Çalışan verileri yüklenirken bir hata oluştu: " + ex.Message);
-                }
-            }
-        }
+                    catch (Exception ex)
+                    {
+                        // Veritabanı hatası durumunda
+                        MessageBox.Show("Çalışanlar yüklenirken bir hata oluştu: " + ex.Message, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                } // SqlCommand using bloğu sonu
+            } // SqlConnection using bloğu sonu
+        } // LoadEmployeeData metodu sonu
 
 
+        // Çalışan Ekle butonunun Click olayı
         private void btnAdd_Click(object sender, EventArgs e)
         {
+            
             string name = txtName.Text.Trim();
             string position = txtPosition.Text.Trim();
+            string salaryText = txtSalary.Text.Trim();
 
-            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(position) || string.IsNullOrEmpty(txtSalary.Text.Trim()))
+            // Temel Doğrulama
+            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(position) || string.IsNullOrEmpty(salaryText))
             {
-                MessageBox.Show("Lütfen tüm alanları doldurun.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                MessageBox.Show("Lütfen tüm çalışan bilgilerini doldurun.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return; // Alanlar boşsa işlemi durdur
             }
 
-            if (!float.TryParse(txtSalary.Text.Trim(), out float salary))
+            // Maaş alanının sayısal olup olmadığını kontrol et
+            // TryParse metodu, dönüşüm başarılı olursa true döner ve değeri 'salary' değişkenine atar.
+            if (!float.TryParse(salaryText, out float salary))
             {
-                MessageBox.Show("Geçersiz maaş formatı.", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+                MessageBox.Show("Lütfen maaş için geçerli bir sayı girin.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtSalary.Clear(); // Maaş alanını temizle
+                txtSalary.Focus(); // Maaş alanına odaklan
+                return; // Geçersiz maaşsa işlemi durdur
             }
 
-            using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
+            // === Veritabanına Ekleme İşlemi ===
+
+            string connectionString = ConfigurationManager.ConnectionStrings["EmployeeDBConnection"].ConnectionString;
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                try
+                
+                string insertQuery = "INSERT INTO Employees (Name, Position, Salary) VALUES (@Name, @Position, @Salary)";
+
+                using (SqlCommand command = new SqlCommand(insertQuery, connection))
                 {
-                    connection.Open();
-                    string sql = "INSERT INTO employees (name, position, salary) VALUES (@name, @position, @salary)";
-                    using (NpgsqlCommand command = new NpgsqlCommand(sql, connection))
+                    // Parametre değerlerini ata
+                    command.Parameters.AddWithValue("@Name", name);
+                    command.Parameters.AddWithValue("@Position", position);
+                    command.Parameters.AddWithValue("@Salary", salary); // Float değişkenini parametre olarak ekle
+
+                    try
                     {
-                        command.Parameters.AddWithValue("@name", name);
-                        command.Parameters.AddWithValue("@position", position);
-                        command.Parameters.AddWithValue("@salary", salary);
+                        connection.Open(); // Bağlantıyı aç
+                        int rowsAffected = command.ExecuteNonQuery(); // Komutu çalıştır (INSERT için ExecuteNonQuery kullanılır)
 
-                        int affectedRows = command.ExecuteNonQuery();
-
-                        if (affectedRows > 0)
+                        if (rowsAffected > 0)
                         {
-                            MessageBox.Show("Çalışan başarıyla eklendi.", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            LoadEmployeeData();
-                            ClearInputFields(); 
+                            MessageBox.Show("Çalışan başarıyla eklendi.", "Başarı", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                            // === Başarılı Ekleme Sonrası Yapılacaklar ===
+
+                            // TextBox'ları temizle
+                            txtName.Clear();
+                            txtPosition.Clear();
+                            txtSalary.Clear();
+
+                            // DataGridView'i yeniden yükleyerek güncel listeyi göster
+                            LoadEmployeeData(); // Çalışan listesini yenile
                         }
                         else
                         {
-                            MessageBox.Show("Çalışan eklenirken bir hata oluştu.", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            // rowsAffected 0 veya daha az ise (bu INSERT için beklenmez)
+                            MessageBox.Show("Çalışan eklenirken beklenmeyen bir durum oluştu.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Veritabanı hatası: " + ex.Message, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-        }
+                    catch (Exception ex)
+                    {
+                        // Veritabanı veya diğer hataları yakala
+                        MessageBox.Show("Bir hata oluştu: " + ex.Message, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                } // SqlCommand using bloğu sonu
+            } // SqlConnection using bloğu sonu
+        } // btnAdd_Click metodu sonu
 
+
+      
         private void btnEdit_Click(object sender, EventArgs e)
         {
-            if (dgvEmployees.SelectedRows.Count > 0)
-            {
-                if (dgvEmployees.SelectedRows[0].Cells["employeeid"].Value != null)
-                {
-                    int employeeId = Convert.ToInt32(dgvEmployees.SelectedRows[0].Cells["employeeid"].Value);
+            // Düzenleme mantığı buraya gelecek
+            MessageBox.Show("Düzenle butonu tıklandı. Düzenleme mantığı henüz eklenmedi.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    if (!isEditMode)
-                    {
-                        
-                        selectedEmployeeIdForEdit = employeeId;
-                        txtName.Text = dgvEmployees.SelectedRows[0].Cells["name"].Value.ToString();
-                        txtPosition.Text = dgvEmployees.SelectedRows[0].Cells["position"].Value.ToString();
-                        txtSalary.Text = dgvEmployees.SelectedRows[0].Cells["salary"].Value.ToString();
-
-                        isEditMode = true;
-                        btnEdit.Text = "Kaydet";
-                        btnAdd.Enabled = false; 
-                        btnDelete.Enabled = false; 
-                    }
-                    else
-                    {
-                        
-                        string name = txtName.Text.Trim();
-                        string position = txtPosition.Text.Trim();
-
-                        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(position) || string.IsNullOrEmpty(txtSalary.Text.Trim()))
-                        {
-                            MessageBox.Show("Lütfen tüm alanları doldurun.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            return;
-                        }
-
-                        if (!float.TryParse(txtSalary.Text.Trim(), out float salary))
-                        {
-                            MessageBox.Show("Geçersiz maaş formatı.", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-                        }
-
-                        using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
-                        {
-                            try
-                            {
-                                connection.Open();
-                                string sql = "UPDATE employees SET name = @name, position = @position, salary = @salary WHERE employeeid = @employeeid";
-                                using (NpgsqlCommand command = new NpgsqlCommand(sql, connection))
-                                {
-                                    command.Parameters.AddWithValue("@name", name);
-                                    command.Parameters.AddWithValue("@position", position);
-                                    command.Parameters.AddWithValue("@salary", salary);
-                                    command.Parameters.AddWithValue("@employeeid", selectedEmployeeIdForEdit.Value);
-
-                                    int affectedRows = command.ExecuteNonQuery();
-
-                                    if (affectedRows > 0)
-                                    {
-                                        MessageBox.Show("Çalışan bilgileri başarıyla güncellendi.", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                        LoadEmployeeData(); 
-                                        ClearInputFields(); 
-                                        isEditMode = false; 
-                                        btnEdit.Text = "Düzenle";
-                                        btnAdd.Enabled = true; 
-                                        btnDelete.Enabled = true; 
-                                        selectedEmployeeIdForEdit = null;
-                                    }
-                                    else
-                                    {
-                                        MessageBox.Show("Çalışan bilgileri güncellenirken bir hata oluştu.", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                MessageBox.Show("Veritabanı hatası: " + ex.Message, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Düzenlemek için geçerli bir çalışan seçilmedi.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-            }
-            else
-            {
-                MessageBox.Show("Lütfen düzenlemek için bir çalışan seçin.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
+            
         }
 
+
+        // === Sil (Delete) Butonu Click Olayı ===
+        // Bu metot, DataGridView'de seçili çalışanı veritabanından silmek için gerekli mantığı içerecektir.
+        // Şu an için sadece placeholder.
         private void btnDelete_Click(object sender, EventArgs e)
         {
-            if (dgvEmployees.SelectedRows.Count > 0)
-            {
-                if (dgvEmployees.SelectedRows[0].Cells["employeeid"].Value != null)
-                {
-                    int employeeId = Convert.ToInt32(dgvEmployees.SelectedRows[0].Cells["employeeid"].Value);
+            // Silme mantığı buraya gelecek
+            MessageBox.Show("Sil butonu tıklandı. Silme mantığı henüz eklenmedi.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    DialogResult result = MessageBox.Show("Seçili çalışanı silmek istediğinize emin misiniz?", "Onay", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-
-                    if (result == DialogResult.Yes)
-                    {
-                        using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
-                        {
-                            try
-                            {
-                                connection.Open();
-                                string sql = "DELETE FROM employees WHERE employeeid = @employeeid";
-                                using (NpgsqlCommand command = new NpgsqlCommand(sql, connection))
-                                {
-                                    command.Parameters.AddWithValue("@employeeid", employeeId);
-
-                                    int affectedRows = command.ExecuteNonQuery();
-
-                                    if (affectedRows > 0)
-                                    {
-                                        MessageBox.Show("Çalışan başarıyla silindi.", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                        LoadEmployeeData(); 
-                                        ClearInputFields(); 
-                                    }
-                                    else
-                                    {
-                                        MessageBox.Show("Çalışan silinirken bir hata oluştu.", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                MessageBox.Show("Veritabanı hatası: " + ex.Message, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Silmek için geçerli bir çalışan seçilmedi.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-            }
-            else
-            {
-                MessageBox.Show("Lütfen silmek için bir çalışan seçin.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
+           
         }
 
-        private void ClearInputFields()
-        {
-            txtName.Clear();
-            txtPosition.Clear();
-            txtSalary.Clear();
-            isEditMode = false; 
-            btnEdit.Text = "Düzenle"; 
-            btnAdd.Enabled = true;
-            btnDelete.Enabled = true;
-            selectedEmployeeIdForEdit = null;
-        }
-    }
-}
+
+        // DataGridView'de bir hücreye tıklandığında (isteğe bağlı olarak düzenleme için kullanılabilir)
+        // private void dgvEmployees_CellClick(object sender, DataGridViewCellEventArgs e)
+        // {
+        //     // Eğer düzenleme için DataGridView satırına tıklama özelliğini implement edecekseniz
+        //     // Seçili satırdaki veriyi TextBox'lara doldurma mantığı buraya gelebilir.
+        //     if (e.RowIndex >= 0) // Başlık satırına tıklanmadıysa
+        //     {
+        //         DataGridViewRow row = dgvEmployees.Rows[e.RowIndex];
+        //         // TextBox'ları doldur
+        //         // txtName.Text = row.Cells["Name"].Value.ToString();
+        //         // txtPosition.Text = row.Cells["Position"].Value.ToString();
+        //         // txtSalary.Text = row.Cells["Salary"].Value.ToString();
+        //         // Seçili çalışanın EmployeeID'sini bir değişkende saklayın (güncelleme/silme için gerekli olacak)
+        //         // int selectedEmployeeId = Convert.ToInt32(row.Cells["EmployeeID"].Value);
+        //     }
+        // }
+
+
+        // Formunuzdaki diğer metotlar buraya gelebilir.
+    } // Form sınıfı sonu
+} // Namespace sonu
 

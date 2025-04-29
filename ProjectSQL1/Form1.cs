@@ -1,4 +1,5 @@
-﻿using Npgsql;
+﻿// frmLogin.cs dosyanızın tam içeriği (ProjectSQL1 projesi için)
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -8,75 +9,122 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using BCrypt.Net;
+using System.Data.SqlClient; 
+using System.Configuration; 
 
 
-namespace ProjectSQL1
+
+namespace ProjectSQL1 
 {
-    public partial class frmLogin : Form
+    public partial class frmLogin : Form  
     {
-        private string connectionString = "Host=localhost;Port=5432;Database=EmployeeManagement;Username=postgres;Password=sifre;";
-
+        
         public frmLogin()
         {
-            InitializeComponent();
+            InitializeComponent(); 
         }
 
+        
         private void frmLogin_Load(object sender, EventArgs e)
         {
-
+            
         }
 
+        
         private void btnLogin_Click(object sender, EventArgs e)
         {
-            using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
+          
+
+            
+            string username = txtUsername.Text.Trim(); 
+            string password = txtPassword.Text;       
+
+           
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                try
-                {
-                    connection.Open();
-
-                    string sql = "SELECT Password FROM Users WHERE Username = @username;";
-                    using (NpgsqlCommand command = new NpgsqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@username", txtUsername.Text);
-
-                        string storedHashedPassword = (string)command.ExecuteScalar();
-
-                        if (storedHashedPassword != null && BCrypt.Net.BCrypt.Verify(txtPassword.Text, storedHashedPassword))
-                        {
-                            
-                            frmMain mainForm = new frmMain();
-                            mainForm.ShowDialog();
-                            this.Hide();
-                        }
-                        else
-                        {
-                            
-                            MessageBox.Show("Kullanıcı adı veya şifre yanlış.");
-                        }
-                    }
-
-                    connection.Close();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Veritabanı bağlantısı başarısız: " + ex.Message);
-                }
+                MessageBox.Show("Lütfen kullanıcı adı ve şifreyi girin.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return; 
             }
+
+          
+
+           
+            string connectionString = ConfigurationManager.ConnectionStrings["EmployeeDBConnection"].ConnectionString;
+
+            
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                
+                string selectQuery = "SELECT Role FROM Users WHERE Username = @Username AND Password = @Password";
+
+                using (SqlCommand command = new SqlCommand(selectQuery, connection))
+                {
+                    
+                    command.Parameters.AddWithValue("@Username", username);
+                    command.Parameters.AddWithValue("@Password", password); 
+
+                    try
+                    {
+                       
+                        connection.Open();
+
+                        
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            
+                            if (reader.Read()) 
+                            {
+                                
+                                MessageBox.Show("Giriş başarılı!", "Başarı", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                                
+                                string role = reader["Role"].ToString(); 
+
+                               
+                                this.Hide();
+                                // Ana formu oluştur ve göster
+                                // frmMain mainForm = new frmMain(username, role); // Ana forma kullanıcı adı ve rolü gönderebilirsiniz
+                                // mainForm.Show();
+
+                                
+                            }
+                            else
+                            {
+                                
+                                MessageBox.Show("Kullanıcı adı veya şifre hatalı.", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                                
+                                txtPassword.Clear();
+                            }
+                        } 
+
+                    }
+                    catch (Exception ex)
+                    {
+                        
+                        MessageBox.Show("Bir hata oluştu: " + ex.Message, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                } 
+            } 
+
         }
 
+        
         private void btnRegister_Click(object sender, EventArgs e)
         {
-            try
-            {
-                frmRegister registerForm = new frmRegister();
-                registerForm.Show();
-                this.Hide();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Kayıt formu açılırken bir hata oluştu: " + ex.Message);
-            }
+            
+             
+        }
+        private void txtUsername_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnRegister_Click_1(object sender, EventArgs e)
+        {
+            this.Hide();
+            frmRegister registerForm = new frmRegister();
+            registerForm.Show();
         }
     }
 }
